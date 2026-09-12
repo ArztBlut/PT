@@ -1,0 +1,14 @@
+# Build the app image from this checkout instead of pulling a published one.
+# Use it with the engine file you want:
+#
+#   docker compose -f compose.yaml -f compose.build.yaml up -d --build
+#   docker compose -f compose.mariadb.yaml -f compose.build.yaml up -d --build
+#
+# In Portainer this only works for a stack deployed from a Git repository,
+# because a build needs the source. Pasted stacks have no build context.
+
+services:
+  app:
+    build: ./app
+    image: personnel-registry-app:local
+    pull_policy: build
