@@ -1,0 +1,6 @@
+# Shell scripts must keep LF endings or they won't run after a Windows checkout.
+*.sh text eol=lf
+entrypoint.sh text eol=lf
+* text=auto
+*.woff2 binary
+*.png binary
