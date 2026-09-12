@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign in | {{title}}</title>
+  <link rel="icon" href="/static/favicon.svg?v={{v}}" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/css/app.css?v={{v}}">
+</head>
+<body class="login-page">
+  <div class="stage">
+    <main class="box login-box">
+      <form id="login-form" class="login-form" novalidate>
+        <h1 class="login-title">{{title}}</h1>
+        <p class="login-sub">Sign in to manage personnel records.</p>
+        <div class="field">
+          <label for="username">Username</label>
+          <input class="input" id="username" name="username" autocomplete="username"
+                 autocapitalize="none" spellcheck="false" required autofocus>
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input class="input" id="password" name="password" type="password"
+                 autocomplete="current-password" required>
+        </div>
+        <p class="form-banner" id="login-error" role="alert" hidden></p>
+        <button class="btn btn-primary btn-block" type="submit">Sign in</button>
+      </form>
+    </main>
+  </div>
+  <script src="/static/js/login.js?v={{v}}" defer></script>
+</body>
+</html>
