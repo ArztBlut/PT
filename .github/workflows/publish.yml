@@ -1,0 +1,67 @@
+# Builds the Personnel Registry image and publishes it to GitHub Container
+# Registry, so Portainer can pull it instead of building from source.
+#
+# This file must live at the REPOSITORY ROOT (.github/workflows/), not inside
+# DB-PT. GitHub only runs workflows found at the root, whatever subdirectory the
+# project itself lives in.
+#
+# Nothing to configure: GITHUB_TOKEN is provided automatically. After the first
+# successful run, make the package public under
+# Profile -> Packages -> pt/db-pt -> Package settings, or add registry
+# credentials in Portainer.
+
+name: Publish Personnel Registry image
+
+on:
+  push:
+    branches: [main]
+    # Only rebuild when this project changes, so other things in the PT repo
+    # don't trigger it.
+    paths:
+      - "DB-PT/**"
+      - ".github/workflows/publish.yml"
+  workflow_dispatch:
+
+env:
+  IMAGE: ghcr.io/${{ github.repository }}/db-pt
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-qemu-action@v3
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          # Lowercased, because image names can't contain capitals and the
+          # repository is called PT.
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,format=short
+
+      - uses: docker/build-push-action@v6
+        with:
+          # The build context is the app folder inside DB-PT.
+          context: ./DB-PT/app
+          # arm64 covers a Raspberry Pi or an Ampere VM.
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
