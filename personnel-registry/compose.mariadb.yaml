@@ -1,0 +1,70 @@
+# Personnel Registry — MariaDB.
+#
+# For PostgreSQL, deploy compose.yaml instead.
+# To build from source rather than pull a published image, use compose.build.yaml.
+#
+# Required environment variable: DB_PASSWORD
+# Everything else has a working default. In Portainer, set these under
+# "Environment variables" on the stack.
+
+name: personnel-registry
+
+services:
+  app:
+    image: ${APP_IMAGE:-ghcr.io/arztblut/pt/db-pt:latest}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_ENGINE: mariadb
+      DB_HOST: db
+      DB_NAME: ${DB_NAME:-personnel}
+      DB_USER: ${DB_USER:-personnel}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD on the stack before deploying.}
+      # Optional. Leave unset and the app generates a session key on first start
+      # and keeps it in the database, so sessions survive a redeploy.
+      SECRET_KEY: ${SECRET_KEY:-}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      # Optional. Leave unset and a password is generated and written to the
+      # app container's log the first time it starts.
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      APP_TITLE: ${APP_TITLE:-Personnel Registry}
+      SESSION_HOURS: ${SESSION_HOURS:-12}
+      SESSION_HTTPS_ONLY: ${SESSION_HTTPS_ONLY:-false}
+    ports:
+      # 5060 as specified, plus an alternate because browsers refuse to open
+      # 5060. Both serve the same interface. See the README.
+      - "${WEB_BIND_ADDRESS:-0.0.0.0}:${WEB_PORT:-5060}:8080"
+      - "${WEB_BIND_ADDRESS:-0.0.0.0}:${WEB_ALT_PORT:-8060}:8080"
+    networks: [registry]
+
+  db:
+    image: mariadb:11.8
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: ${DB_NAME:-personnel}
+      MARIADB_USER: ${DB_USER:-personnel}
+      MARIADB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD on the stack before deploying.}
+      MARIADB_RANDOM_ROOT_PASSWORD: "yes"
+      MARIADB_AUTO_UPGRADE: "1"
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_uca1400_ai_ci
+    volumes:
+      - mariadb-data:/var/lib/mysql
+    ports:
+      - "${DB_BIND_ADDRESS:-127.0.0.1}:${DB_PORT:-5061}:3306"
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    networks: [registry]
+
+volumes:
+  mariadb-data:
+
+networks:
+  registry:
